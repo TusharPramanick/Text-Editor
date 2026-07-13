@@ -1,75 +1,95 @@
-from tkinter import *
+import tkinter as tk
 from tkinter import filedialog, messagebox
 
-filename = None
+class TextEditor:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Text Editor")
+        self.filename = None
 
-def newFile():
-    global filename
-    filename = "Untitled"
-    text.delete(1.0, END)
+        # Creating Text widget
+        self.text = tk.Text(self.root, width=80, height=25, wrap='word', font=('Arial', 12), undo=True)
+        self.text.pack(fill='both', expand=True)
 
-def saveFile():
-    global filename
-    if filename == "Untitled":
-        messagebox.showerror("Error", "Please save file with a name first (use Save As)")
-        return
-    t = text.get(1.0, END)
-    try:
-        f = open(filename, 'w')
-        f.write(t)
-        f.close()
-    except:
-        messagebox.showerror("Error", "Unable to save file")
-    
-def saveAs():
-    global filename
-    f = filedialog.asksaveasfile(mode='w', defaultextension='.txt')
-    if not f:
-        return
-    t = text.get(1.0, END)
-    try:
-        f.write(t.rstrip())
-        f.close()
-        filename = f.name
-        messagebox.showinfo("Success", "File saved successfully!")
-    except:
-        messagebox.showerror(title="Error", message="Unable to save...")
+        # Creating menu bar
+        self.menubar = tk.Menu(self.root)
+        self.filemenu = tk.Menu(self.menubar, tearoff=0)
+        self.filemenu.add_command(label='New', command=self.new_file)
+        self.filemenu.add_command(label='Open', command=self.open_file)
+        self.filemenu.add_command(label='Save', command=self.save_file)
+        self.filemenu.add_command(label='Save As', command=self.save_as)
+        self.filemenu.add_separator()
+        self.filemenu.add_command(label='Quit', command=self.root.quit)
+        self.menubar.add_cascade(label='File', menu=self.filemenu)
+
+        self.root.config(menu=self.menubar)
         
-def openFile():
-    global filename
-    f = filedialog.askopenfile('r')
-    if not f:
-        return
-    try:
-        t = f.read()
-        f.close()
-        text.delete(1.0,END)
-        text.insert(1.0, t)
-        filename = f.name
-        messagebox.showinfo("Success", "File opened successfully!")
-    except:
-        messagebox.showerror("Error", "Unable to open file")
+        # Creating status bar
+        self.status_bar = tk.Label(self.root, anchor=tk.SW, text="Ln: 1 | Col: 0", bd='5px')
+        self.status_bar.pack(side='bottom', fill='x')
+        
+        self.text.bind('<KeyRelease>', self.update_status_bar)
+        self.text.bind('<ButtonRelease-1>', self.update_status_bar)
+        
+    # Creating updating status bar
+    def update_status_bar(self, event=None):
+        line, column = self.text.index('insert').split('.')
+        self.status_bar.config(text= f"Ln: {line}| Col:  {column}")
+        
+    # Command methods for menu options
+    def new_file(self):
+        self.filename = None
+        self.text.delete("1.0", tk.END)
 
-#setting up the window
-root = Tk()
-root.title("Text Editor")
-root.minsize(width=400, height=400)
-root.maxsize(width=400, height=400)
+    def save_file(self):
+        if not self.filename:
+            self.save_as()
+            return
 
-#Creating Text-box widget
-text = Text(root, width=400, height=400, wrap='word', font=('Arial', 12), undo=True)
-text.pack()
+        content = self.text.get("1.0", tk.END)
+        try:
+            with open(self.filename, 'w', encoding='utf-8') as f:
+                f.write(content.rstrip('\n'))
+            messagebox.showinfo("Success", "File saved successfully!")
+        except OSError as exc:
+            messagebox.showerror("Error", f"Unable to save file: {exc}")
 
-#Creating meanu-bar widget
-menubar = Menu(root)
-filemenu = Menu(menubar)
-filemenu.add_command(label='New', command=newFile)
-filemenu.add_command(label='Save', command=saveFile)
-filemenu.add_command(label='Save As', command=saveAs)
-filemenu.add_command(label='Open', command=openFile)
-filemenu.add_separator()
-filemenu.add_command(label='Quit', command=root.quit)
-menubar.add_cascade(label='File', menu=filemenu)
+    def save_as(self):
+        file_path = filedialog.asksaveasfilename(
+            defaultextension='.txt',
+            filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
+        )
+        if not file_path:
+            return
 
-root.config(menu=menubar)
-root.mainloop()
+        content = self.text.get("1.0", tk.END)
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content.rstrip('\n'))
+            self.filename = file_path
+            messagebox.showinfo("Success", "File saved successfully!")
+        except OSError as exc:
+            messagebox.showerror("Error", f"Unable to save file: {exc}")
+
+    def open_file(self):
+        file_path = filedialog.askopenfilename(
+            filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.text.delete("1.0", tk.END)
+            self.text.insert("1.0", content)
+            self.filename = file_path
+            messagebox.showinfo("Success", "File opened successfully!")
+        except OSError as exc:
+            messagebox.showerror("Error", f"Unable to open file: {exc}")
+
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    TextEditor(root)
+    root.mainloop()
