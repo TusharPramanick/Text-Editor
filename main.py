@@ -34,10 +34,10 @@ class TextEditor:
         self.word_wrap = tk.BooleanVar()
         self.word_wrap.set(True)
         self.view_menu.add_checkbutton(label='Word Wrap', variable=self.word_wrap, command=self.word_wrap_update, onvalue=1, offvalue=0)
-
-        self.view_menu.add_checkbutton(label='Status Bar', variable='check', onvalue=1, offvalue=0)
-
-        self.root.config(menu=self.menubar)
+        
+        self.status_bar_toggle = tk.BooleanVar()
+        self.status_bar_toggle.set(True)
+        self.view_menu.add_checkbutton(label='Status Bar', variable=self.status_bar_toggle, command=self.status_bar_update, onvalue=1, offvalue=0)
         
         # Creating Status bar
         self.status_bar = tk.Label(self.root, anchor=tk.SW, text="Ln: 1 | Col: 0", bd='5px')
@@ -46,13 +46,21 @@ class TextEditor:
         self.text.bind('<KeyRelease>', self.update_status_bar)
         self.text.bind('<ButtonRelease-1>', self.update_status_bar)
         
+        self.root.config(menu=self.menubar)
+        
     # Word Wrap update
     def word_wrap_update(self):
         if self.word_wrap.get() :
             self.text.config(wrap='word')
         else:
             self.text.config(wrap='none')
-        
+    
+    # Status Bar toggle
+    def status_bar_update(self):
+        if self.status_bar_toggle.get() :
+            self.status_bar.pack(side='bottom', fill='x')
+        else:
+            self.status_bar.pack_forget()
         
     # Creating updating status bar
     def update_status_bar(self, event=None):
